@@ -17,6 +17,11 @@ Extensible attributes are supported in this client.  It should be noted that in 
 This gem is known to be compatible with Infoblox versions 1.0 through 2.3.  While Infoblox claims that their API is backwards-compatible, one caveat remains with the Extensible Attributes (see elsewhere in this document).  Some features are only available in newer versions (such as FixedAddress and AAAARecord).
 
 ## Usage
+### Installation
+```
+ansible-galaxy install git+https://github.com/xoanmi/ansible-module-infoblox.git
+```
+
 ### Actions
 - get_network [network]
 - get_next_available_ip [network] 
@@ -34,7 +39,8 @@ This gem is known to be compatible with Infoblox versions 1.0 through 2.3.  Whil
 - hosts: localhost
   connection: local
   gather_facts: False
-
+  roles:
+    - ansible-module-infoblox
   tasks:
     - name: "Add host"
       infoblox:
