@@ -185,6 +185,8 @@ class Infoblox(object):
             payload = response.json()
 
         if isinstance(payload, dict) and "text" in payload:
+            if payload.get('code') == 'Client.Ibap.Data.Conflict':
+                return payload
             raise Exception(payload["text"])
         else:
             return payload
@@ -640,9 +642,10 @@ def main():
 
     elif action == "add_host":
         result = infoblox.create_host_record(host, network, address, comment)
+        changed = False if result.get('code') == 'Client.Ibap.Data.Conflict' else True
         if result:
             result = infoblox.get_host_by_name(host)
-            module.exit_json(changed=True, result=result)
+            module.exit_json(changed=changed, result=result)
         else:
             raise Exception()
 
