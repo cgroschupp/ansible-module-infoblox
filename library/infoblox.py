@@ -2,6 +2,7 @@
 from copy import copy
 
 from ansible.module_utils.basic import *
+from ansible.errors import AnsibleError
 
 try:
     import requests
@@ -178,7 +179,6 @@ class Infoblox(object):
         """
         request = getattr(requests, method)
         response = request(self.base_url + tail, auth=self.auth, verify=False, **params)
-
         if response.status_code not in ok_codes:
             response.raise_for_status()
         else:
@@ -310,7 +310,7 @@ class Infoblox(object):
         """
         if not object_ref:
             self.module.exit_json(msg="Object _ref required!")
-        return self.invoke("put", object_ref, json=alias)
+        return self.invoke("put", object_ref, ok_codes=(200, 400), json=alias)
 
     # ---------------------------------------------------------------------------
     # get_host_by_name()
@@ -568,14 +568,18 @@ def main():
         result = infoblox.get_aliases(host)
         if result:
             object_ref = result[0]["_ref"]
-            aliases = {}
-            if "aliases" in result[0]:
-                alias_list = result[0]["aliases"]
+            aliases = result[0].get('aliases', [])
+
+            if alias not in aliases:
+                aliases.append(alias)
             else:
-                alias_list = []
-            alias_list.append(alias)
-            aliases["aliases"] = alias_list
-            result = infoblox.update_host_alias(object_ref, aliases)
+                module.exit_json(changed=False, result=result)
+
+            result = infoblox.update_host_alias(object_ref, {'aliases': aliases})
+
+            if 'Error' in result:
+                raise AnsibleError('unable to create alias %s: %s' % (alias, result.get('text')))
+
             if result:
                 module.exit_json(changed=True, result=result)
             else:
